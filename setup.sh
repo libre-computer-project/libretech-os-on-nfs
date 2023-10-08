@@ -107,6 +107,12 @@ fi
 sudo systemctl reload nfs-kernel-server
 
 cat <<EOF
+Please create a MicroSD card with libretech-flash-tool:
+
+git clone https://github.com/libre-computer-project/libretech-flash-tool.git
+cd libretech-flash-tool
+./lft.sh bl-flash BOARD DEVICE # eg. aml-a311d-cc-nfs mmcblk1
+
 Please run the following from u-boot prompt:
 
 env set bootargs 'root=/dev/nfs nfsroot=$host_ip:$LOON_DIR,vers=4 rw ip=dhcp nfsrootdebug'
