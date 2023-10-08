@@ -109,10 +109,10 @@ sudo systemctl reload nfs-kernel-server
 cat <<EOF
 Please run the following from u-boot prompt:
 
-env set bootargs root=/dev/nfs nfsroot=$host_ip:$LOON_DIR,vers=4 rw ip=dhcp nfsrootdebug
-env set bootcmd "dhcp; tftpboot; bootefi \$loadaddr"
+env set bootargs 'root=/dev/nfs nfsroot=$host_ip:$LOON_DIR,vers=4 rw ip=dhcp nfsrootdebug'
+env set bootcmd 'dhcp; tftpboot; if load mmc 1 \\\$fdt_addr_r dtb/\\\$fdtfile; then bootefi \\\$loadaddr \\\$fdt_addr_r; else bootefi \\\$loadaddr; fi'
 env set bootdelay 0
-env set bootfile $LOON_NAME
+env set bootfile '$LOON_NAME'
 env save
 boot
 EOF
