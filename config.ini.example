@@ -1,0 +1,19 @@
+# example config.ini
+
+LOON_ARCH=arm64
+LOON_NAME=sbc-$LOON_ARCH
+LOON_DIR=/srv/$LOON_NAME
+LOON_KERNEL_GIT=https://github.com/libre-computer-project/libretech-linux.git
+LOON_KERNEL_DIR=linux
+
+LOON_HOSTNAME=$LOON_NAME
+LOON_IP=10.42.0.0/24
+
+LOON_DISTRO=debian
+LOON_STRAP_VARIANT=standard
+LOON_COMPONENTS="main contrib non-free non-free-firmware"
+LOON_PACKAGES="vim ed emacs nano git build-essential device-tree-compiler"
+LOON_RELEASE=bookworm
+
+LOON_APT_SERVER=http://127.0.0.1:3142
+#LOON_IP_MISMATCH_IGNORE=1
