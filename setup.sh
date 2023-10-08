@@ -46,15 +46,15 @@ fi
 
 #DEBIAN
 if [ ! -d "$LOON_DIR" ]; then
-	apt_opt_proxy=""
-	if [ ! -z "$LOON_APT_SERVER" ]; then
-		apt_opt_proxy="--aptopt=Acquire::http { Proxy \"$LOON_APT_SERVER\"; }"
-	fi
 	apt_includes=""
 	if [ ! -z "$LOON_PACKAGES" ]; then
 		apt_includes="--include=${LOON_PACKAGES// /,}"
 	fi
-	sudo mmdebstrap --variant "$LOON_STRAP_VARIANT" --components="${LOON_COMPONENTS// /,}" $apt_includes "$apt_opt_proxy" --dpkgopt='force-unsafe-io' --arch="$LOON_ARCH" "$LOON_RELEASE" "$LOON_DIR"
+	if [ -z "$LOON_APT_SERVER" ]; then
+		sudo mmdebstrap --variant "$LOON_STRAP_VARIANT" --components="${LOON_COMPONENTS// /,}" $apt_includes ${apt_opt_proxy} --dpkgopt='force-unsafe-io' --arch="$LOON_ARCH" "$LOON_RELEASE" "$LOON_DIR"
+	else
+		sudo mmdebstrap --variant "$LOON_STRAP_VARIANT" --components="${LOON_COMPONENTS// /,}" $apt_includes --aptopt="Acquire::http { Proxy \"$LOON_APT_SERVER\"; }" --dpkgopt='force-unsafe-io' --arch="$LOON_ARCH" "$LOON_RELEASE" "$LOON_DIR"
+	fi
 	sudo rm "$LOON_DIR/etc/apt/apt.conf.d/99mmdebstrap"
 	echo "$LOON_HOSTNAME" | sudo tee "$LOON_DIR/etc/hostname"
 	echo "127.0.1.1	$LOON_HOSTNAME" | sudo tee "$LOON_DIR/etc/hosts"
