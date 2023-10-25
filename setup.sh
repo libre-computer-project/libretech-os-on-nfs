@@ -13,9 +13,9 @@ fi
 host_ip=$(ip route | grep "^$LOON_IP" | grep -ioE "src\s[0-9a-f.:]+" | cut -f 2 -d " ")
 if [ -z "$host_ip" ]; then
 	echo "Unable to detect matching subnet on host." >&2
-	if [ -z "$LOON_IP_MISMATCH_IGNORE" ]; then
+	if [ -z "$LOON_IP_SUBNET_MISMATCH_IGNORE" ]; then
 		exit 1
-	elif [ "$LOON_IP_MISMATCH_IGNORE" -ne 1 ]; then
+	elif [ "$LOON_IP_SUBNET_MISMATCH_IGNORE" -ne 1 ]; then
 		exit 1
 	fi
 	host_ip=$(hostname -I | cut -f 1 -d " ")
@@ -60,14 +60,14 @@ if [ ! -d "$LOON_DIR" ]; then
 	echo "127.0.1.1	$LOON_HOSTNAME" | sudo tee "$LOON_DIR/etc/hosts"
 	sudo ln -sfn /proc/net/pnp "$LOON_DIR/etc/resolv.conf"
 	sudo mkdir "$LOON_DIR/boot/efi"
-	echo "/dev/mmcblk1p1	/boot/efi	vfat	umask=0077	0	1" | sudo tee "$LOON_DIR/etc/fstab"
+	#echo "/dev/mmcblk1p1	/boot/efi	vfat	umask=0077	0	1" | sudo tee "$LOON_DIR/etc/fstab"
 	sudo git clone --single-branch --depth=1 https://github.com/libre-computer-project/libretech-wiring-tool.git "$LOON_DIR/root/libretech-wiring-tool"
 	sudo make -C "$LOON_DIR/root/libretech-wiring-tool"
 fi
 
 #KERNEL
-if [ ! -e "$LOON_DIR/vmlinuz" ]; then
-	sudo ln -sfn /dev/null "$LOON_DIR/vmlinuz"
+if [ ! -e "$LOON_DIR/boot/vmlinuz" ]; then
+	sudo ln -sfn /dev/null "$LOON_DIR/boot/vmlinuz"
 fi
 
 if [ ! -d "$LOON_KERNEL_DIR" ]; then
@@ -80,7 +80,7 @@ if [ ! -f "$LOON_KERNEL_DIR/build.sh" ]; then
 cd \$(dirname \$(readlink -f "\${BASH_SOURCE[0]}"))
 export ARCH=$LOON_ARCH
 export CROSS_COMPILE=$cross_compile
-export INSTALL_PATH=$LOON_DIR
+export INSTALL_PATH=$LOON_DIR/boot
 export INSTALL_MOD_PATH=$LOON_DIR
 make -j \`nproc\` \$@
 EOF
@@ -97,8 +97,7 @@ fi
 sudo "$LOON_KERNEL_DIR/build.sh" install modules_install
 
 #TFTP
-. /etc/default/tftpd-hpa
-sudo cp "$LOON_DIR/vmlinuz" $TFTP_DIRECTORY/$LOON_NAME
+sudo sed -i "s/^TFTP_DIRECTORY=.*/TFTP_DIRECTORY=\"${LOON_DIR//\//\\\/}\"/" /etc/default/tftpd-hpa
 
 if [ -z "$(sudo grep ^root "$LOON_DIR/etc/shadow" | cut -f 2 -d :)" ]; then
 	sudo chroot "$LOON_DIR" passwd
@@ -107,18 +106,20 @@ fi
 sudo systemctl reload nfs-kernel-server
 
 cat <<EOF
-Please create a MicroSD card with libretech-flash-tool:
+Create a MicroSD card with libretech-flash-tool:
 
-git clone https://github.com/libre-computer-project/libretech-flash-tool.git
-cd libretech-flash-tool
-./lft.sh bl-flash BOARD DEVICE # eg. aml-a311d-cc-nfs mmcblk1
+  git clone https://github.com/libre-computer-project/libretech-flash-tool.git
+  sudo libretech-flash-tool/lft.sh bl-flash BOARD DEVICE # eg. aml-a311d-cc-nfs mmcblk1/sda
 
-Please run the following from u-boot prompt:
+If your board has onboard SPI NOR, move the boot switch to boot from MMC.
+Run the following from u-boot prompt:
 
-env set bootargs 'root=/dev/nfs nfsroot=$host_ip:$LOON_DIR,vers=4 rw ip=dhcp nfsrootdebug'
-env set bootcmd 'dhcp; tftpboot; if load mmc 1 \\\$fdt_addr_r dtb/\\\$fdtfile; then bootefi \\\$loadaddr \\\$fdt_addr_r; else bootefi \\\$loadaddr; fi'
-env set bootdelay 0
-env set bootfile '$LOON_NAME'
-env save
-boot
+  env set bootargs 'root=/dev/nfs nfsroot=$host_ip:$LOON_DIR,vers=4 rw ip=dhcp nfsrootdebug'
+  env set bootcmd 'dhcp; tftpboot \\\$kernel_addr_r boot/vmlinuz; if tftpboot \\\$fdt_addr_r boot/efi/dtb/\\\$fdtfile; then bootefi \\\$kernel_addr_r \\\$fdt_addr_r; else bootefi \\\$kernel_addr_r; fi'
+  env set bootdelay 0
+  env set serverip $host_ip
+  env save
+  boot
+
+Subsequent boots should automatically boot to NFS.
 EOF

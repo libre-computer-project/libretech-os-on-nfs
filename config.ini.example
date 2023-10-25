@@ -16,4 +16,4 @@ LOON_PACKAGES="vim ed emacs nano git build-essential device-tree-compiler"
 LOON_RELEASE=bookworm
 
 LOON_APT_SERVER=http://127.0.0.1:3142
-#LOON_IP_MISMATCH_IGNORE=1
+#LOON_IP_SUBNET_MISMATCH_IGNORE=1
