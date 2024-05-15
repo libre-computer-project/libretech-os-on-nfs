@@ -114,10 +114,10 @@ Create a MicroSD card with libretech-flash-tool:
 If your board has onboard SPI NOR, move the boot switch to boot from MMC.
 Run the following from u-boot prompt:
 
-  env set bootargs 'root=/dev/nfs nfsroot=$host_ip:$LOON_DIR,vers=4 rw ip=dhcp nfsrootdebug'
+  env set serverip $host_ip
+  env set bootargs "root=/dev/nfs nfsroot=\$serverip:$LOON_DIR,vers=4 rw ip=dhcp nfsrootdebug"
   env set bootcmd 'dhcp; tftpboot \\\$kernel_addr_r boot/vmlinuz; if tftpboot \\\$fdt_addr_r boot/efi/dtb/\\\$fdtfile; then bootefi \\\$kernel_addr_r \\\$fdt_addr_r; else bootefi \\\$kernel_addr_r; fi'
   env set bootdelay 0
-  env set serverip $host_ip
   env save
   boot
 
