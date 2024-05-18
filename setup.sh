@@ -93,6 +93,7 @@ if [ ! -f "$LOON_KERNEL_DIR/.config" ]; then
 	sed -i "s/\(CONFIG_DEBUG_INFO_BTF=\).*/\\1n/" "$LOON_KERNEL_DIR/.config"
 fi
 
+"$LOON_KERNEL_DIR/build.sh" defconfig
 "$LOON_KERNEL_DIR/build.sh"
 sudo "$LOON_KERNEL_DIR/build.sh" install modules_install
 
